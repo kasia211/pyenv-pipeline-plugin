@@ -186,6 +186,7 @@ public class WithPythonEnvStep extends Step implements Serializable{
 
             Launcher.ProcStarter procStarter = launcher.launch();
             procStarter.cmds(command);
+            procStarter = procStarter.stderr(logger()).stdout(logger());
             Proc proc = procStarter.start();
 
             proc.join();
