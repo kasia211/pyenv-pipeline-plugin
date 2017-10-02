@@ -34,6 +34,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -69,6 +70,7 @@ public class WithPythonEnvStepIntegrationTest {
 
     @Test
     public void shouldSetEnvVar() throws Exception {
+        Assume.assumeTrue("No Python Installations Found.", checkForPython());
         // We only test the relative dir name here, since we can't easily predict the full directory name
         WorkflowJob job = j.jenkins.createProject(WorkflowJob.class, "p");
         job.setDefinition(new CpsFlowDefinition("node { withPythonEnv('python') { echo \"current virtualenv " +
@@ -116,6 +118,7 @@ public class WithPythonEnvStepIntegrationTest {
 
     @Test
     public void ensureDurableTaskCompatibility() throws Exception {
+        Assume.assumeTrue("No Python Installations Found.", checkForPython());
         // We ensure that returnStdout works by examining the lines of output from a Pipeline script that activates
         // a withPythonEnv block, and outputs the version of the Python command that prints the version of the
         // interpreter. If the prefix "python version: " is found in a line of the logs, and that line contains any
@@ -152,8 +155,13 @@ public class WithPythonEnvStepIntegrationTest {
         Assert.assertTrue(foundOutput);
     }
 
+    private boolean checkForPython() throws Exception{
+        return findFirstPythonInstallation() != null;
+    }
+
     @Test
     public void shouldUseShiningPanda() throws Exception {
+        Assume.assumeTrue("No Python Installations Found.", checkForPython());
         // Here, we dictate a single PythonInstallation to be used for the ShiningPanda test, so
         // that we can pick the appropriate name, and verify that it is used later down the line
         // Note that this will not work if there are no findable Python Installations on the testing
