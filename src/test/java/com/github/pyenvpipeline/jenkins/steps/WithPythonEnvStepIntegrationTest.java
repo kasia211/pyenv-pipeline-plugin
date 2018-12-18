@@ -123,7 +123,7 @@ public class WithPythonEnvStepIntegrationTest {
         String platformInlinePythonCommand = "python -c \\\"import platform; import sys; sys.stdout.write(platform.python_version()+\\'\\\\n\\')\\\"";
 
         WorkflowJob job = j.jenkins.createProject(WorkflowJob.class, "p");
-        String script = formatOSSpecificNodeScipts("node { withPythonEnv('" + installation.getName() + "') { def version = " +
+        String script = formatOSSpecificNodeScipts("node { withPythonEnv( pythonInstallation: '" + installation.getName() + "', pythonEnvInstallation: '" + installation.getName() +"') { def version = " +
                 OS_REPLACE_TARGET +"(script: '" + platformInlinePythonCommand + "', returnStdout: true).trim()\n" +
                 "echo \"python version: ${version}\"" +
                 "}  }");
@@ -146,7 +146,20 @@ public class WithPythonEnvStepIntegrationTest {
     }
 
     @Test
-    public void shouldUseShiningPanda() throws Exception {
+    public void shouldWorkWithOneArgument() throws Exception {
+        PythonInstallation installation = getPythonInstallation();
+        String workflowScript = "node { withPythonEnv('" + installation.getName() + "') {  } }";
+        shouldUseShiningPanda(workflowScript, installation);
+    }
+
+    @Test
+    public void shouldWorkWithTwoArguments() throws Exception {
+        PythonInstallation installation = getPythonInstallation();
+        String workflowScript = "node { withPythonEnv( pythonInstallation: '" + installation.getName() + "', pythonEnvInstallation: '" + installation.getName() +"') {  } }";
+        shouldUseShiningPanda(workflowScript, installation);
+    }
+
+    public PythonInstallation getPythonInstallation() throws Exception {
         // Here, we dictate a single PythonInstallation to be used for the ShiningPanda test, so
         // that we can pick the appropriate name, and verify that it is used later down the line
         // Note that this will not work if there are no findable Python Installations on the testing
@@ -154,8 +167,11 @@ public class WithPythonEnvStepIntegrationTest {
         PythonInstallation installation = findFirstPythonInstallation();
         Assume.assumeTrue(installation != null);
 
-        String workflowScript = "node { withPythonEnv('" + installation.getName() + "') {  } }";
+        return installation;
 
+    }
+
+    public void shouldUseShiningPanda(String workflowScript, PythonInstallation installation) throws Exception {
         loggingRule = loggingRule.capture(300);
         loggingRule.record(VirtualenvManager.class, Level.FINE);
         WorkflowJob job = j.jenkins.createProject(WorkflowJob.class, "p");

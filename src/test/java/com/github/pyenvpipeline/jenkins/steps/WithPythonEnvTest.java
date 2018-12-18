@@ -35,13 +35,24 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class WithPythonEnvTest {
 
     @Test
-    public void testGetBaseDirectory() {
+    public void testGetBaseDirectoryWithOneArgument() {
         VirtualenvManager virtualenvManager = VirtualenvManager.getInstance();
-        Assert.assertEquals(".pyenv-Foo-Bar-python3", virtualenvManager.getRelativePythonEnvDirectory("C:\\Foo\\Bar\\python3"));
-        Assert.assertEquals(".pyenv-foo-bar-blah-python", virtualenvManager.getRelativePythonEnvDirectory("/foo/bar/blah/python"));
-        Assert.assertEquals(".pyenv-foo-bar-blah-python", virtualenvManager.getRelativePythonEnvDirectory("foo/bar/blah/python"));
-        Assert.assertEquals(".pyenv-python3", virtualenvManager.getRelativePythonEnvDirectory("python3"));
-        Assert.assertEquals(".pyenv-Foo-Bar-python3", virtualenvManager.getRelativePythonEnvDirectory("c:\\Foo\\Bar\\python3"));
-        Assert.assertEquals(".pyenv-Foo-Bar-python3", virtualenvManager.getRelativePythonEnvDirectory("D:\\Foo\\Bar\\python3"));
+        Assert.assertEquals(".pyenv-Foo-Bar-python3", virtualenvManager.getRelativePythonDirectory("C:\\Foo\\Bar\\python3", "C:\\Foo\\Bar\\python3"));
+        Assert.assertEquals(".pyenv-foo-bar-blah-python", virtualenvManager.getRelativePythonDirectory("/foo/bar/blah/python", "/foo/bar/blah/python"));
+        Assert.assertEquals(".pyenv-foo-bar-blah-python", virtualenvManager.getRelativePythonDirectory("foo/bar/blah/python", "foo/bar/blah/python"));
+        Assert.assertEquals(".pyenv-python3", virtualenvManager.getRelativePythonDirectory("python3", "python3"));
+        Assert.assertEquals(".pyenv-Foo-Bar-python3", virtualenvManager.getRelativePythonDirectory("c:\\Foo\\Bar\\python3", "c:\\Foo\\Bar\\python3"));
+        Assert.assertEquals(".pyenv-Foo-Bar-python3", virtualenvManager.getRelativePythonDirectory("D:\\Foo\\Bar\\python3", "D:\\Foo\\Bar\\python3"));
+    }
+
+    @Test
+    public void testGetBaseDirectoryWithTwoArguments() {
+        VirtualenvManager virtualenvManager = VirtualenvManager.getInstance();
+        Assert.assertEquals(".pyenv-Foo-Bar-python3-Foo-Bar-python2", virtualenvManager.getRelativePythonDirectory("C:\\Foo\\Bar\\python3", "C:\\Foo\\Bar\\python2"));
+        Assert.assertEquals(".pyenv-foo-bar-blah-python-foo-bar-blah-python2", virtualenvManager.getRelativePythonDirectory("/foo/bar/blah/python", "/foo/bar/blah/python2"));
+        Assert.assertEquals(".pyenv-foo-bar-blah-python-foo-bar-blah-pypy", virtualenvManager.getRelativePythonDirectory("foo/bar/blah/python", "foo/bar/blah/pypy"));
+        Assert.assertEquals(".pyenv-python3-python2", virtualenvManager.getRelativePythonDirectory("python3", "python2"));
+        Assert.assertEquals(".pyenv-Foo-Bar-python3-Foo-Bar-python2", virtualenvManager.getRelativePythonDirectory("c:\\Foo\\Bar\\python3", "c:\\Foo\\Bar\\python2"));
+        Assert.assertEquals(".pyenv-Foo-Bar-python3-Foo-Bar-python2", virtualenvManager.getRelativePythonDirectory("D:\\Foo\\Bar\\python3", "D:\\Foo\\Bar\\python2"));
     }
 }

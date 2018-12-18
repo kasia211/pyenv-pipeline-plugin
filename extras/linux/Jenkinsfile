@@ -10,7 +10,7 @@ pipeline {
                     sh "python --version"
                 }
 
-                withPythonEnv('/usr/bin/python3') {
+                withPythonEnv(pythonInstallation: '/usr/bin/python3', pythonEnvInstallation: '/usr/bin/pypy') {
                     sh "python --version"
                 }
             }
