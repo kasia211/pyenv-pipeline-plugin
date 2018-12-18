@@ -27,7 +27,6 @@ public class VirtualenvManager implements Serializable {
 
     private static final Logger LOGGER = Logger.getLogger(VirtualenvManager.class.getName());
     private static final List<String> ENVVARS_TO_IGNORE = Arrays.asList("HUDSON_COOKIE");
-    private static HashMap<String, EnvVars> virtualenvMap = new HashMap<>();
     static final String[] VALID_TOOL_DESCRIPTOR_IDS = {"jenkins.plugins.shiningpanda.tools.PythonInstallation"};
     private static final String DEFAULT_DIR_PREFIX = ".pyenv";
 
@@ -74,16 +73,16 @@ public class VirtualenvManager implements Serializable {
         return capturedOutput;
     }
 
-    private void createPythonEnv(StepContext stepContext, String pythonInstallation) throws Exception{
-        ArgumentListBuilder command = getCreateVirtualEnvCommand(stepContext, pythonInstallation);
+    private void createPythonEnv(StepContext stepContext, String pythonInstallation, String pythonVenv) throws Exception{
+        ArgumentListBuilder command = getCreateVirtualEnvCommand(stepContext, pythonInstallation, pythonVenv);
         runCommandList(command, stepContext);
     }
 
-    public String getFullyQualifiedPythonEnvDirectoryName(StepContext stepContext, String pythonInstallation) throws Exception{
+    public String getFullyQualifiedExecutablePythonDirectoryName(StepContext stepContext, String pythonInstallation, String pythonEnvInstallation) throws Exception{
         EnvVars envVars = stepContext.get(EnvVars.class);
         String workspace = envVars.get("WORKSPACE");
         boolean isUnix = isUnix(stepContext);
-        String relativeDir = getRelativePythonEnvDirectory(pythonInstallation);
+        String relativeDir = getRelativePythonDirectory(pythonInstallation, pythonEnvInstallation);
 
         if (isUnix) {
             return workspace + "/" + relativeDir;
@@ -92,9 +91,10 @@ public class VirtualenvManager implements Serializable {
         }
     }
 
-    public ArgumentListBuilder getCreateVirtualEnvCommand(StepContext context, String pythonInstallation) throws Exception {
-        String fullQualifiedDirectoryName = getFullyQualifiedPythonEnvDirectoryName(context, pythonInstallation);
+    public ArgumentListBuilder getCreateVirtualEnvCommand(StepContext context, String pythonInstallation, String pythonVenv) throws Exception {
+        String fullQualifiedDirectoryName = getFullyQualifiedExecutablePythonDirectoryName(context, pythonInstallation, pythonVenv);
         String commandPath = getCommandPath(pythonInstallation, context, ToolInstallation.all());
+        String commandVenvPath = getCommandPath(pythonVenv, context, ToolInstallation.all());
         LOGGER.info("Creating virtualenv at " + fullQualifiedDirectoryName + " using Python installation " +
                 "found at " + commandPath);
 
@@ -103,7 +103,7 @@ public class VirtualenvManager implements Serializable {
         command.add(commandPath);
         command.add("-m");
         command.add("virtualenv");
-        command.add("--python="+commandPath);
+        command.add("--python="+commandVenvPath);
         command.add(fullQualifiedDirectoryName);
 
         return command;
@@ -167,18 +167,16 @@ public class VirtualenvManager implements Serializable {
     }
 
     public EnvVars getVirtualEnvEnvVars(WithPythonEnvStep step, StepContext stepContext) throws Exception {
-        EnvVars result = virtualenvMap.get(step.getPythonInstallation());
 
-        if (result == null) {
-            String pythonInstallation = step.getPythonInstallation();
-            String virtualenvDirectory = getFullyQualifiedPythonEnvDirectoryName(stepContext, pythonInstallation);
+        String pythonEnvInstallation = step.getPythonEnvInstallation();
+        String pythonInstallation = step.getPythonInstallation();
+        String virtualenvDirectory = getFullyQualifiedExecutablePythonDirectoryName(stepContext, pythonInstallation, pythonEnvInstallation);
 
-            if (!stepContext.get(FilePath.class).child(virtualenvDirectory).exists()) {
-                createPythonEnv(stepContext, step.getPythonInstallation());
-            }
-
-            result = diffEnvironments(stepContext, virtualenvDirectory);
+        if (!stepContext.get(FilePath.class).child(virtualenvDirectory).exists()) {
+                createPythonEnv(stepContext, pythonInstallation, pythonEnvInstallation);
         }
+
+        EnvVars result = diffEnvironments(stepContext, virtualenvDirectory);
 
         return result;
     }
@@ -324,18 +322,6 @@ public class VirtualenvManager implements Serializable {
         } else {
             // This either points to a little python executable, or a directory that contains one
             String commandPathBase = pythonInstallation;
-
-            String[] portions = commandPathBase.split(Pattern.quote("/"));
-            String lastPortion = portions[portions.length-1];
-
-            if (!lastPortion.contains("python")) {
-                if (!commandPathBase.endsWith("/")) {
-                    commandPathBase += "/";
-                }
-
-                commandPathBase += "python";
-            }
-
             return commandPathBase;
         }
     }
@@ -386,8 +372,8 @@ public class VirtualenvManager implements Serializable {
         return l.getLogger();
     }
 
-    public String getRelativePythonEnvDirectory(String pythonInstallation){
-        String postfix = pythonInstallation.replaceAll("/", "-")
+    public String replacePath(String pythonPath){
+        String postfix = pythonPath.replaceAll("/", "-")
                 .replaceFirst("[a-zA-Z]:\\\\", "")
                 .replaceAll("\\\\", "-");
 
@@ -395,7 +381,16 @@ public class VirtualenvManager implements Serializable {
             postfix = "-" + postfix;
         }
 
-        return DEFAULT_DIR_PREFIX + postfix;
+        return postfix;
+    }
+
+    public String getRelativePythonDirectory(String pythonInstallation, String pythonEnvInstallation){
+        String pythonInstallationPostfix = replacePath(pythonInstallation);
+        String pythonEnvInstallationPostfix= replacePath(pythonEnvInstallation);
+        if (pythonInstallationPostfix.equals(pythonEnvInstallationPostfix)){
+            return DEFAULT_DIR_PREFIX + pythonInstallationPostfix;
+        }
+        return DEFAULT_DIR_PREFIX + pythonInstallationPostfix + pythonEnvInstallationPostfix;
     }
 
 }

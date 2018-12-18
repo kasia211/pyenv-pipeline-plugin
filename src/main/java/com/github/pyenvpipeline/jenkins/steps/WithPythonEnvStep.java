@@ -30,6 +30,7 @@ import hudson.*;
 import hudson.model.Run;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
 import javax.annotation.Nonnull;
 import java.io.*;
@@ -41,14 +42,24 @@ import java.util.logging.Logger;
 public class WithPythonEnvStep extends Step implements Serializable{
     private static final Logger LOGGER = Logger.getLogger(WithPythonEnvStep.class.getName());
     private String pythonInstallation;
+    private String pythonEnvInstallation;
 
     @DataBoundConstructor
     public WithPythonEnvStep(String pythonInstallation){
         this.pythonInstallation = pythonInstallation;
+        this.pythonEnvInstallation = pythonInstallation;
+    }
+
+    @DataBoundSetter
+    public void setPythonEnvInstallation(String pythonEnvInstallation){
+        this.pythonEnvInstallation = pythonEnvInstallation;
     }
 
     public String getPythonInstallation() {
         return pythonInstallation.trim();
+    }
+    public String getPythonEnvInstallation() {
+        return pythonEnvInstallation.trim();
     }
 
     @Override
